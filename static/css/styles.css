@@ -1,0 +1,76 @@
+/* static/css/styles.css */
+
+:root {
+    /* --- Design Tokens --- */
+    --primary-color: #0d6efd; /* Trustworthy Blue */
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --bg-light: #f8f9fa;
+    --text-main: #212529;
+    --text-muted: #6c757d;
+    
+    /* --- UX Variables --- */
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+}
+
+/* --- Component: Navbar --- */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* --- Component: Cards --- */
+.card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform var(--transition-speed);
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* --- UX: Skeleton Loading (The "Shimmer" Effect) --- */
+.skeleton {
+    background: #e0e0e0;
+    background-image: linear-gradient(
+        to right,
+        #e0e0e0 0%,
+        #f0f0f0 20%,
+        #e0e0e0 40%,
+        #e0e0e0 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 800px 104px; 
+    display: inline-block;
+    position: relative; 
+    animation-duration: 1s;
+    animation-fill-mode: forwards; 
+    animation-iteration-count: infinite;
+    animation-name: shimmer;
+    animation-timing-function: linear;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+
+.skeleton-text { height: 16px; margin-bottom: 8px; width: 100%; }
+.skeleton-img { height: 200px; width: 100%; display: block; }
+.skeleton-btn { height: 36px; width: 100px; }
+
+/* --- UX: Toast Notifications --- */
+.toast-container {
+    z-index: 1055;
+}
