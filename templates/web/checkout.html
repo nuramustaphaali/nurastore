@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | Django Store{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h4 class="mb-4">Shipping Details</h4>
+            <form id="checkout-form">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="full_name" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" placeholder="080..." required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" id="address" rows="3" required></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-control" id="city" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">State</label>
+                        <select class="form-select" id="state" required>
+                            <option value="">Choose...</option>
+                            <option value="Kano">Kano</option>
+                            <option value="Lagos">Lagos</option>
+                            <option value="Abuja">Abuja</option>
+                            <option value="Kaduna">Kaduna</option>
+                            </select>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <button class="btn btn-primary btn-lg w-100" type="submit">Place Order</button>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h4 class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-primary">Your Cart</span>
+                        <span class="badge bg-primary rounded-pill" id="summary-count">0</span>
+                    </h4>
+                    
+                    <ul class="list-group mb-3" id="summary-list">
+                        </ul>
+
+                    <li class="list-group-item d-flex justify-content-between bg-light">
+                        <span class="fw-bold">Total (NGN)</span>
+                        <strong id="summary-total">₦0.00</strong>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Reuse the Fetch Cart Logic to fill the summary
+        App.loadCheckoutSummary();
+
+        // Handle Form Submit
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Processing...';
+            btn.disabled = true;
+
+            const formData = {
+                full_name: document.getElementById('full_name').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+            };
+
+            await App.placeOrder(formData, btn, originalText);
+        });
+    });
+</script>
+{% endblock %}

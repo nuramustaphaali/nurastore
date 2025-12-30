@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from core.models import Profile
 from .models import Product, Category
 from .models import Cart, CartItem
+from .models import Order, OrderItem
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,3 +76,17 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ['id', 'items', 'total_price']
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['product_name', 'price', 'quantity']
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'status', 'total_amount', 'created_at', 'items', 'full_name', 'address', 'city', 'state', 'phone']
+        read_only_fields = ['id', 'status', 'total_amount', 'created_at', 'items']
+

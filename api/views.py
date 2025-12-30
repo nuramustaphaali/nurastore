@@ -8,6 +8,9 @@ from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 from core.email_service import EmailService 
 
+from django.db import transaction
+# ... existing imports ...
+from .models import Order, OrderItem, Cart
 
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
@@ -159,3 +162,71 @@ class CartItemView(views.APIView):
         cart = cart_item.cart
         cart_item.delete()
         return Response(CartSerializer(cart).data)
+
+
+
+
+class CheckoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # 1. Get User's Cart
+        try:
+            cart = Cart.objects.get(user=request.user)
+            if not cart.items.exists():
+                return Response({"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+        except Cart.DoesNotExist:
+            return Response({"error": "No cart found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Extract Shipping Data
+        data = request.data
+        
+        # 3. Database Transaction (All or Nothing)
+        try:
+            with transaction.atomic():
+                # A. Create Order Shell
+                order = Order.objects.create(
+                    user=request.user,
+                    full_name=data.get('full_name'),
+                    address=data.get('address'),
+                    city=data.get('city'),
+                    state=data.get('state'),
+                    phone=data.get('phone'),
+                    total_amount=cart.total_price # Calculated server-side from cart model
+                )
+
+                # B. Move Items & Deduct Stock
+                items_to_create = []
+                for item in cart.items.select_related('product'):
+                    product = item.product
+                    
+                    # Stock Check
+                    if product.stock < item.quantity:
+                        raise ValueError(f"Not enough stock for {product.name}")
+
+                    # Deduct Stock
+                    product.stock -= item.quantity
+                    product.save()
+
+                    # Create Immutable Order Item
+                    items_to_create.append(OrderItem(
+                        order=order,
+                        product=product,
+                        product_name=product.name,
+                        price=product.price, # Snapshot current price
+                        quantity=item.quantity
+                    ))
+
+                # Bulk Create for performance
+                OrderItem.objects.bulk_create(items_to_create)
+
+                # C. Clear Cart
+                cart.items.all().delete()
+                
+                return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "Checkout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

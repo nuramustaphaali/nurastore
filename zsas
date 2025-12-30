@@ -190,7 +190,7 @@ Enable secure, Nigerian-friendly payment processing.
 
 ### **Core Tasks**
 
-1. Integrate primary payment gateway (cards, transfers, USSD).
+1. Integrate primary (Paystack) with code not package. payment gateway (cards, transfers, USSD).
 2. Implement payment initialization API.
 3. Handle asynchronous payment verification via webhooks.
 4. Support payment failure recovery.

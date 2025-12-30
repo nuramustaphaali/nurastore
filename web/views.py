@@ -12,3 +12,6 @@ def login_view(request):
 
 def register_view(request):
     return render(request, 'web/register.html')
+
+def checkout_view(request):
+    return render(request, 'web/checkout.html')

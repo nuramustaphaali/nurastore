@@ -315,6 +315,70 @@ const App = {
             }
         } catch(e) { console.error(e); }
     },
+    // ... inside App object ...
+
+    // 9. Load Summary on Checkout Page
+    loadCheckoutSummary: async function() {
+        const list = document.getElementById('summary-list');
+        if(!list) return;
+
+        try {
+            const response = await fetch('/api/cart/', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            const cart = await response.json();
+
+            // Update Total
+            document.getElementById('summary-total').innerText = `₦${parseFloat(cart.total_price).toLocaleString()}`;
+            document.getElementById('summary-count').innerText = cart.items.length;
+
+            // Update List
+            let html = '';
+            cart.items.forEach(item => {
+                html += `
+                <li class="list-group-item d-flex justify-content-between lh-sm">
+                    <div>
+                        <h6 class="my-0 small">${item.product_name}</h6>
+                        <small class="text-muted">Qty: ${item.quantity}</small>
+                    </div>
+                    <span class="text-muted">₦${parseFloat(item.subtotal).toLocaleString()}</span>
+                </li>`;
+            });
+            list.innerHTML = html;
+
+        } catch(e) { console.error(e); }
+    },
+
+    // 10. API Action: Place Order
+    placeOrder: async function(formData, btn, originalText) {
+        try {
+            const response = await fetch('/api/checkout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Success! Redirect to "Order Success" (We'll build this next, or reuse Index for now)
+                this.showToast('Order placed successfully!', 'success');
+                setTimeout(() => window.location.href = '/', 2000); 
+                // In Phase 9, we will redirect to /payment instead
+            } else {
+                this.showToast(data.error || 'Checkout failed', 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        } catch (e) {
+            this.showToast('Connection failed', 'error');
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    },
 };
 
 // Initialize Skeletons on load (Demonstration)
