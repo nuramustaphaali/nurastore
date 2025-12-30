@@ -327,9 +327,10 @@ const App = {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
             });
             const cart = await response.json();
+        this.cartSubtotal = parseFloat(cart.total_price); // Save for math later
 
-            // Update Total
-            document.getElementById('summary-total').innerText = `₦${parseFloat(cart.total_price).toLocaleString()}`;
+        // Update UI (Subtotal only initially)
+        document.getElementById('summary-total').innerText = `₦${this.cartSubtotal.toLocaleString()}`;
             document.getElementById('summary-count').innerText = cart.items.length;
 
             // Update List
@@ -390,6 +391,55 @@ const App = {
             btn.innerText = originalText;
             btn.disabled = false;
         }
+    },
+
+    // ... inside App object ...
+
+    // Store zones locally to avoid repeated API calls
+    deliveryZones: [],
+    cartSubtotal: 0,
+
+    // 11. Load Delivery Zones (Call this on Checkout Page Load)
+    loadDeliveryZones: async function() {
+        const select = document.getElementById('state');
+        if(!select) return;
+
+        try {
+            const response = await fetch('/api/delivery-zones/');
+            this.deliveryZones = await response.json();
+
+            let html = '<option value="">Select State...</option>';
+            this.deliveryZones.forEach(zone => {
+                html += `<option value="${zone.state}" data-fee="${zone.fee}" data-time="${zone.estimated_time}">${zone.state}</option>`;
+            });
+            select.innerHTML = html;
+        } catch(e) { console.error("Failed to load zones"); }
+    },
+
+    // 12. Update Checkout Summary (Math Logic)
+    calculateTotal: function() {
+        const select = document.getElementById('state');
+        const deliveryEl = document.getElementById('summary-delivery');
+        const totalEl = document.getElementById('summary-total');
+        const infoEl = document.getElementById('delivery-info');
+        
+        if(!select) return;
+
+        // Get selected option data
+        const selectedOption = select.options[select.selectedIndex];
+        const fee = parseFloat(selectedOption.getAttribute('data-fee') || 0);
+        const time = selectedOption.getAttribute('data-time') || '';
+
+        // Update UI Text
+        deliveryEl.innerText = `₦${fee.toLocaleString()}`;
+        if(time) infoEl.innerText = `Estimated Delivery: ${time}`;
+        else infoEl.innerText = '';
+
+        // Calculate Grand Total (Subtotal + Fee)
+        // Note: We need to ensure we have the subtotal. 
+        // We will update loadCheckoutSummary to save it.
+        const grandTotal = this.cartSubtotal + fee;
+        totalEl.innerText = `₦${grandTotal.toLocaleString()}`;
     },
 };
 

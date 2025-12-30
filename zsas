@@ -246,7 +246,9 @@ A delivery system aligned with local realities.
 Build credibility and long-term user confidence.
 
 ### **Core Tasks**
-create product detail view
+create product detail view and full implemet
+create user profile and full implament
+create order detail view and full implent
 1. Enable product reviews for completed orders.
 2. Implement star ratings.
 3. Add moderation and abuse prevention.

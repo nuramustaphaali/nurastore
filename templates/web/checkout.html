@@ -29,14 +29,11 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">State</label>
-                        <select class="form-select" id="state" required>
-                            <option value="">Choose...</option>
-                            <option value="Kano">Kano</option>
-                            <option value="Lagos">Lagos</option>
-                            <option value="Abuja">Abuja</option>
-                            <option value="Kaduna">Kaduna</option>
+                        <label class="form-label">State / Region</label>
+                        <select class="form-select" id="state" required onchange="App.calculateTotal()">
+                            <option value="">Select State...</option>
                             </select>
+                        <div id="delivery-info" class="form-text text-primary small"></div>
                     </div>
                 </div>
 
@@ -89,6 +86,11 @@
                         </ul>
 
                     <li class="list-group-item d-flex justify-content-between bg-light">
+                        <span class="text-muted">Delivery Fee</span>
+                        <span id="summary-delivery">₦0.00</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between bg-light">
                         <span class="fw-bold">Total (NGN)</span>
                         <strong id="summary-total">₦0.00</strong>
                     </li>
@@ -104,6 +106,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Reuse the Fetch Cart Logic to fill the summary
         App.loadCheckoutSummary();
+        App.loadDeliveryZones();
 
         // Handle Form Submit
         document.getElementById('checkout-form').addEventListener('submit', async (e) => {

@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
+from .serializers import OrderSerializer, ProductSerializer, CategorySerializer
 
 
 from django.shortcuts import get_object_or_404
@@ -258,19 +258,19 @@ class PaymentVerifyView(views.APIView):
             except Order.DoesNotExist:
                 return Response({"error": "Order not found"}, status=404)
         
-        return Response({"status": "failed", "message": "Payment verification failed"}, status=400)
-
+        return Response({"status": "failed", "message": "Payment verification failed"}, status=400)       
 
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from rest_framework import status, views, generics
+from rest_framework import status, views
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 
-# --- IMPORT MODELS HERE (Make sure Cart is included) ---
-from .models import Product, Category, Cart, CartItem, Order, OrderItem
-from .serializers import ProductSerializer, CategorySerializer, CartSerializer, OrderSerializer
+# Models
+from .models import Product, Cart, Order, OrderItem
+from core.models import DeliveryZone # Imported for Delivery Logic
 from core.paystack import Paystack
+from .serializers import OrderSerializer
 
 class CheckoutView(views.APIView):
     permission_classes = [IsAuthenticated]
@@ -284,22 +284,39 @@ class CheckoutView(views.APIView):
         except Cart.DoesNotExist:
             return Response({"error": "No cart found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Extract Shipping Data
+        # 2. Extract Data
         data = request.data
         payment_method = data.get('payment_method', 'paystack')
+        state_name = data.get('state')
 
-        # 3. Database Transaction
+        # 3. CALCULATE DELIVERY FEE (Server-Side Validation)
+        # We don't trust the frontend price. We verify it here.
+        delivery_fee = 0
+        try:
+            # Case-insensitive match for state (e.g. "kano" matches "Kano")
+            zone = DeliveryZone.objects.get(state__iexact=state_name)
+            delivery_fee = zone.fee
+        except DeliveryZone.DoesNotExist:
+            # Fallback/Default fee if state is not in your DB
+            delivery_fee = 2500 # Default Standard Delivery
+
+        # 4. Start Database Transaction
         try:
             with transaction.atomic():
-                # A. Create Order
+                
+                # Calculate Grand Total (Cart Subtotal + Delivery Fee)
+                grand_total = cart.total_price + delivery_fee
+
+                # A. Create the Order
                 order = Order.objects.create(
                     user=request.user,
                     full_name=data.get('full_name'),
                     address=data.get('address'),
                     city=data.get('city'),
-                    state=data.get('state'),
+                    state=state_name,
                     phone=data.get('phone'),
-                    total_amount=cart.total_price,
+                    delivery_fee=delivery_fee, # Save the fee
+                    total_amount=grand_total,  # Save the final total
                     payment_method=payment_method
                 )
 
@@ -308,12 +325,15 @@ class CheckoutView(views.APIView):
                 for item in cart.items.select_related('product'):
                     product = item.product
                     
+                    # Check Stock
                     if product.stock < item.quantity:
                         raise ValueError(f"Not enough stock for {product.name}")
 
+                    # Deduct Stock
                     product.stock -= item.quantity
                     product.save()
 
+                    # Create Order Item (Snapshot of price/name)
                     items_to_create.append(OrderItem(
                         order=order,
                         product=product,
@@ -322,16 +342,18 @@ class CheckoutView(views.APIView):
                         quantity=item.quantity
                     ))
 
+                # Bulk Create for performance
                 OrderItem.objects.bulk_create(items_to_create)
 
-                # C. Clear Cart
+                # C. Clear the Cart
                 cart.items.all().delete()
                 
                 # --- D. PAYMENT PROCESSING ---
                 
-                # Option A: Paystack
+                # Option A: Paystack (Card/Transfer)
                 if payment_method == 'paystack':
                     paystack = Paystack()
+                    # Initialize transaction with the Grand Total (Cart + Delivery)
                     res = paystack.initialize_transaction(
                         email=request.user.email,
                         amount=order.total_amount,
@@ -339,6 +361,7 @@ class CheckoutView(views.APIView):
                     )
                     
                     if res['status']:
+                        # Save the Paystack Reference
                         order.payment_reference = res['reference']
                         order.save()
                         
@@ -350,7 +373,7 @@ class CheckoutView(views.APIView):
                     else:
                         raise ValueError("Paystack initialization failed.")
 
-                # Option B: Payment on Delivery / Transfer
+                # Option B: Payment on Delivery (POD) / Bank Transfer
                 else:
                     return Response({
                         "message": "Order placed successfully!",
@@ -358,9 +381,7 @@ class CheckoutView(views.APIView):
                     }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            # This captures the "NameError" if imports are missing
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
 
 class OrderListView(generics.ListAPIView):
     """ List all orders for the logged-in user """
@@ -380,3 +401,12 @@ class OrderDetailView(generics.RetrieveAPIView):
         # Ensure user can only see their OWN orders
         return Order.objects.filter(user=self.request.user)
 
+# ... imports ...
+from core.models import DeliveryZone # Import the new model
+
+class DeliveryZoneListView(views.APIView):
+    permission_classes = [AllowAny] # Public info
+
+    def get(self, request):
+        zones = DeliveryZone.objects.filter(is_active=True).values('id', 'state', 'fee', 'estimated_time')
+        return Response(list(zones))

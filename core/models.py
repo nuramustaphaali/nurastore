@@ -49,3 +49,16 @@ class EmailLog(models.Model):
 
     def __str__(self):
         return f"{self.subject} -> {self.recipient} ({self.status})"
+
+
+class DeliveryZone(models.Model):
+    """
+    Defines shipping costs and timelines per state.
+    """
+    state = models.CharField(max_length=50, unique=True, help_text="e.g. Lagos, Kano")
+    fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    estimated_time = models.CharField(max_length=100, default="3-5 Business Days")
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.state} - ₦{self.fee}"

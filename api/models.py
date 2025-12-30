@@ -94,7 +94,7 @@ class Order(models.Model):
     # Financials
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='paystack')
     payment_reference = models.CharField(max_length=100, blank=True, null=True) # The Paystack Ref
     is_paid = models.BooleanField(default=False)
