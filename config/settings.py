@@ -24,6 +24,7 @@ INSTALLED_APPS = [
 
     # Third Party
     'rest_framework',
+    'django_filters',
 
     # Local Apps
     'core',

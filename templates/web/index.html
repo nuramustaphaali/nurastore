@@ -1,60 +1,59 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block title %}Home | Django Store{% endblock %}
 
 {% block content %}
+
 <div class="p-5 mb-4 bg-light rounded-3 border shadow-sm">
     <div class="container-fluid py-3">
         <h1 class="display-5 fw-bold text-primary">Welcome to Django Store</h1>
-        <p class="col-md-8 fs-4 text-muted">A high-performance shopping experience built for speed and reliability.</p>
-        <button class="btn btn-primary btn-lg px-4 me-md-2" type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior: 'smooth'})">
-            Start Shopping
-        </button>
+        <p class="col-md-8 fs-4 text-muted">A high-performance shopping experience.</p>
     </div>
 </div>
 
-<div id="shop-section" class="d-flex justify-content-between align-items-center mb-4 mt-5">
-    <h3>Featured Products</h3>
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-            Filter by Category
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-            <li><a class="dropdown-item" href="#">All Products</a></li>
-            <li><a class="dropdown-item disabled" href="#">Electronics (Coming Soon)</a></li>
-        </ul>
+<div class="card shadow-sm mb-4 p-3 sticky-top" style="top: 70px; z-index: 900;">
+    <div class="row g-2">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" id="search-input" placeholder="Search products..." onkeyup="App.applyFilters()">
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" id="category-select" onchange="App.applyFilters()">
+                <option value="">Loading Categories...</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" id="sort-select" onchange="App.applyFilters()">
+                <option value="">Sort By: Newest</option>
+                <option value="price">Price: Low to High</option>
+                <option value="-price">Price: High to Low</option>
+                <option value="name">Name: A-Z</option>
+            </select>
+        </div>
+
+        <div class="col-md-1">
+            <button class="btn btn-outline-secondary w-100" title="Reset Filters" onclick="App.resetFilters()">
+                <i class="fas fa-redo"></i>
+            </button>
+        </div>
     </div>
 </div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4" id="product-list">
-    
-    <div class="col-12 text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2 text-muted">Loading best deals for you...</p>
     </div>
 
-</div>
-
-<div class="d-flex justify-content-center mt-5 mb-5">
-    <button class="btn btn-outline-primary rounded-pill px-4">Load More Products</button>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // This script triggers the API call as soon as the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("Page Loaded. Attempting to fetch products...");
-        
-        if (typeof App !== 'undefined' && App.fetchProducts) {
-            App.fetchProducts();
-        } else {
-            console.error("Error: App.fetchProducts is not defined. Check if app.js is loaded.");
-            document.getElementById('product-list').innerHTML = '<div class="alert alert-danger">System Error: Javascript engine not loaded.</div>';
-        }
+        // Initialize App
+        App.loadCategories(); // Load the dropdown
+        App.fetchProducts();  // Load the products
     });
 </script>
 {% endblock %}

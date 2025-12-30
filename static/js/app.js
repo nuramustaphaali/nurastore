@@ -56,6 +56,15 @@ const App = {
     },
 
     // 3. API Action: Fetch and Display Products
+    filterState: {
+        search: '',
+        category: '',
+        ordering: '',
+        price_min: '',
+        price_max: ''
+    },
+
+    // 3. API Action: Fetch and Display Products (Updated for Phase 6)
     fetchProducts: async function() {
         const container = document.getElementById('product-list');
         if (!container) return;
@@ -63,12 +72,18 @@ const App = {
         // Show Loading State
         this.renderSkeleton('product-list', 8);
 
+        // Build Query String from Filter State
+        const params = new URLSearchParams();
+        if (this.filterState.search) params.append('search', this.filterState.search);
+        if (this.filterState.category) params.append('category', this.filterState.category);
+        if (this.filterState.ordering) params.append('ordering', this.filterState.ordering);
+        
+        // Construct URL
+        const url = `/api/products/?${params.toString()}`;
+
         try {
-            const response = await fetch('/api/products/');
-            
-            if (!response.ok) {
-                throw new Error('Server returned ' + response.status);
-            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Server returned ' + response.status);
 
             const products = await response.json();
 
@@ -79,24 +94,24 @@ const App = {
             if (products.length === 0) {
                 container.innerHTML = `
                     <div class="col-12 text-center py-5">
-                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No products found yet.</p>
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No products found matching your criteria.</p>
+                        <button class="btn btn-outline-primary" onclick="App.resetFilters()">Clear Filters</button>
                     </div>`;
                 return;
             }
 
-            // Render Products
+            // Render Products (Same rendering logic as before)
             products.forEach(product => {
                 const imgUrl = product.image ? product.image : 'https://via.placeholder.com/300x300?text=No+Image';
                 
-                // Calculate Discount Badge
+                // UX: Discount Badge
                 let badge = '';
                 if (product.old_price && parseFloat(product.old_price) > parseFloat(product.price)) {
                     const diff = Math.round(((product.old_price - product.price) / product.old_price) * 100);
                     badge = `<span class="position-absolute top-0 start-0 badge bg-danger m-2 shadow-sm">-${diff}%</span>`;
                 }
 
-                // Format Price
                 const priceFormatted = parseFloat(product.price).toLocaleString();
                 const oldPriceFormatted = product.old_price ? parseFloat(product.old_price).toLocaleString() : null;
 
@@ -108,9 +123,8 @@ const App = {
                             <img src="${imgUrl}" class="card-img-top" alt="${product.name}" style="height: 220px; object-fit: cover;">
                         </div>
                         <div class="card-body d-flex flex-column">
-                            <small class="text-muted mb-1 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">${product.category_name || 'General'}</small>
-                            <h5 class="card-title text-truncate" title="${product.name}">${product.name}</h5>
-                            
+                            <small class="text-muted mb-1 text-uppercase" style="font-size: 0.75rem;">${product.category_name}</small>
+                            <h5 class="card-title text-truncate">${product.name}</h5>
                             <div class="mt-auto pt-3">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <span class="fs-5 fw-bold text-dark">₦${priceFormatted}</span>
@@ -128,12 +142,50 @@ const App = {
 
         } catch (error) {
             console.error("Fetch error:", error);
-            container.innerHTML = `
-                <div class="col-12 text-center text-danger py-4">
-                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                    <p>Failed to load products. ${error.message}</p>
-                </div>`;
+            container.innerHTML = `<div class="col-12 text-center text-danger">Failed to load products.</div>`;
         }
+    },
+
+    // UX: Apply Filters when user types or selects
+    applyFilters: function() {
+        // Read values from DOM
+        const searchInput = document.getElementById('search-input');
+        const catSelect = document.getElementById('category-select');
+        const sortSelect = document.getElementById('sort-select');
+
+        if(searchInput) this.filterState.search = searchInput.value;
+        if(catSelect) this.filterState.category = catSelect.value;
+        if(sortSelect) this.filterState.ordering = sortSelect.value;
+
+        this.fetchProducts();
+    },
+
+    resetFilters: function() {
+        this.filterState = { search: '', category: '', ordering: '', price_min: '', price_max: '' };
+        
+        // Reset DOM elements
+        document.getElementById('search-input').value = '';
+        document.getElementById('category-select').value = '';
+        document.getElementById('sort-select').value = '';
+        
+        this.fetchProducts();
+    },
+
+    // Helper: Load Categories into Dropdown
+    loadCategories: async function() {
+        const select = document.getElementById('category-select');
+        if(!select) return;
+
+        try {
+            const response = await fetch('/api/categories/');
+            const categories = await response.json();
+            
+            let html = '<option value="">All Categories</option>';
+            categories.forEach(cat => {
+                html += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+            select.innerHTML = html;
+        } catch(e) { console.error("Failed to load categories"); }
     },
 
     // 4. API Action: Add to Cart (Placeholder for Phase 7)
