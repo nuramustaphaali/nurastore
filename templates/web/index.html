@@ -54,6 +54,10 @@
         // Initialize App
         App.loadCategories(); // Load the dropdown
         App.fetchProducts();  // Load the products
+
+        if(Auth.isAuthenticated()) {
+        App.fetchCart();
+    }
     });
 </script>
 {% endblock %}

@@ -14,7 +14,12 @@
 
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-danger">0</span></a>
+                    <a class="nav-link position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#cartSidebar" onclick="App.fetchCart()">
+                        <i class="fas fa-shopping-cart"></i> Cart 
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
+                            0
+                        </span>
+                    </a>
                 </li>
                 <ul class="navbar-nav ms-auto" id="auth-links">
                     <li class="nav-item">

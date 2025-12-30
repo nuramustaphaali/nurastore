@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from core.models import Profile
 from .models import Product, Category
-
+from .models import Cart, CartItem
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,3 +57,21 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'description', 'price', 
             'old_price', 'image', 'stock', 'category', 'category_name'
         ]
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
+    product_image = serializers.ImageField(source='product.image', read_only=True)
+    subtotal = serializers.DecimalField(source='total_price', max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'product_name', 'product_price', 'product_image', 'quantity', 'subtotal']
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    total_price = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'items', 'total_price']

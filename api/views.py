@@ -16,6 +16,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 
+
+from django.shortcuts import get_object_or_404
+from rest_framework import status, views
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Cart, CartItem, Product
+from .serializers import CartSerializer
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
@@ -93,3 +102,60 @@ class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
+
+
+
+
+class CartView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get or Create cart for user
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """ Add item to cart """
+        product_id = request.data.get('product_id')
+        quantity = int(request.data.get('quantity', 1))
+
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        product = get_object_or_404(Product, id=product_id)
+
+        # Logic: If item exists, update quantity. Else create new.
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart, 
+            product=product,
+            defaults={'quantity': quantity}
+        )
+
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+
+        # Return updated cart
+        return Response(CartSerializer(cart).data)
+
+class CartItemView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, item_id):
+        """ Update quantity (e.g., + or - buttons) """
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+        quantity = int(request.data.get('quantity', 1))
+        
+        if quantity > 0:
+            cart_item.quantity = quantity
+            cart_item.save()
+        else:
+            cart_item.delete() # Remove if 0
+
+        return Response(CartSerializer(cart_item.cart).data)
+
+    def delete(self, request, item_id):
+        """ Remove item completely """
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+        cart = cart_item.cart
+        cart_item.delete()
+        return Response(CartSerializer(cart).data)

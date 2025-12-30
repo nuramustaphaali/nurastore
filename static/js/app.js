@@ -188,10 +188,133 @@ const App = {
         } catch(e) { console.error("Failed to load categories"); }
     },
 
-    // 4. API Action: Add to Cart (Placeholder for Phase 7)
-    addToCart: function(id) {
-        this.showToast('Product added to cart (Cart System coming in Phase 7)', 'success');
-    }
+    // 4. API Action: Add to Cart (REAL IMPLEMENTATION)
+    addToCart: async function(productId) {
+        if (!Auth.isAuthenticated()) {
+            this.showToast('Please login to add items to cart', 'error');
+            setTimeout(() => window.location.href = '/login', 1500);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/cart/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({ product_id: productId, quantity: 1 })
+            });
+
+            if (response.ok) {
+                this.showToast('Item added to cart!', 'success');
+                this.fetchCart(); // Update UI
+            } else {
+                this.showToast('Failed to add item', 'error');
+            }
+        } catch (e) { console.error(e); }
+    },
+
+    // 5. API Action: Fetch Cart Data
+    fetchCart: async function() {
+        if (!Auth.isAuthenticated()) return;
+
+        try {
+            const response = await fetch('/api/cart/', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            const cart = await response.json();
+            
+            this.renderCart(cart);
+        } catch (e) { console.error("Cart error", e); }
+    },
+
+    // 6. UI: Render Cart Items in Sidebar
+    renderCart: function(cart) {
+        const container = document.getElementById('cart-items-container');
+        const totalEl = document.getElementById('cart-total');
+        const countEl = document.getElementById('cart-count');
+        const checkoutBtn = document.getElementById('btn-checkout');
+
+        if (!container) return;
+
+        // Update Count Badge
+        const itemCount = cart.items.length;
+        if(countEl) countEl.innerText = itemCount;
+
+        // Handle Empty Cart
+        if (itemCount === 0) {
+            container.innerHTML = `
+                <div class="text-center mt-5">
+                    <i class="fas fa-shopping-basket fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Your cart is empty.</p>
+                </div>`;
+            totalEl.innerText = '₦0.00';
+            checkoutBtn.classList.add('disabled');
+            return;
+        }
+
+        checkoutBtn.classList.remove('disabled');
+        totalEl.innerText = `₦${parseFloat(cart.total_price).toLocaleString()}`;
+
+        // Render Items
+        let html = '';
+        cart.items.forEach(item => {
+            const img = item.product_image ? item.product_image : 'https://via.placeholder.com/80';
+            html += `
+            <div class="d-flex mb-3 pb-3 border-bottom">
+                <img src="${img}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                <div class="ms-3 flex-grow-1">
+                    <h6 class="mb-0 text-truncate" style="max-width: 150px;">${item.product_name}</h6>
+                    <small class="text-muted">₦${parseFloat(item.product_price).toLocaleString()}</small>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="input-group input-group-sm" style="width: 80px;">
+                            <button class="btn btn-outline-secondary" onclick="App.updateCartItem(${item.id}, ${item.quantity - 1})">-</button>
+                            <span class="input-group-text bg-white">${item.quantity}</span>
+                            <button class="btn btn-outline-secondary" onclick="App.updateCartItem(${item.id}, ${item.quantity + 1})">+</button>
+                        </div>
+                        <button class="btn btn-sm text-danger" onclick="App.removeCartItem(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    },
+
+    // 7. API Action: Update Quantity
+    updateCartItem: async function(itemId, newQuantity) {
+        try {
+            const response = await fetch(`/api/cart/items/${itemId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({ quantity: newQuantity })
+            });
+            if(response.ok) {
+                const cart = await response.json();
+                this.renderCart(cart);
+            }
+        } catch(e) { console.error(e); }
+    },
+
+    // 8. API Action: Remove Item
+    removeCartItem: async function(itemId) {
+        try {
+            const response = await fetch(`/api/cart/items/${itemId}/`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            if(response.ok) {
+                const cart = await response.json();
+                this.renderCart(cart);
+            }
+        } catch(e) { console.error(e); }
+    },
 };
 
 // Initialize Skeletons on load (Demonstration)

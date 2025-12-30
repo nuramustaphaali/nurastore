@@ -30,5 +30,29 @@
     <script src="{% static 'js/app.js' %}"></script>
     <script src="{% static 'js/auth.js' %}"></script>    
     {% block scripts %}{% endblock %}
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartSidebar" aria-labelledby="cartSidebarLabel">
+    <div class="offcanvas-header bg-light border-bottom">
+        <h5 class="offcanvas-title" id="cartSidebarLabel"><i class="fas fa-shopping-bag me-2"></i> Your Cart</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <div id="cart-items-container" class="flex-grow-1 overflow-auto">
+            <div class="text-center mt-5 text-muted">
+                <i class="fas fa-spinner fa-spin"></i> Loading...
+            </div>
+        </div>
+
+        <div class="border-top pt-3 mt-3">
+            <div class="d-flex justify-content-between mb-3">
+                <span class="h5">Total:</span>
+                <span class="h5 fw-bold text-primary" id="cart-total">₦0.00</span>
+            </div>
+            <a href="/checkout" class="btn btn-primary w-100 py-2 disabled" id="btn-checkout">
+                Proceed to Checkout
+            </a>
+        </div>
+    </div>
+</div>
 </body>
 </html>
