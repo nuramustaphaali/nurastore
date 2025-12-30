@@ -32,7 +32,8 @@ from django.shortcuts import render
 from .models import Review
 from .serializers import ReviewSerializer, ProductDetailSerializer
 
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 
 class RegisterView(generics.CreateAPIView):
@@ -98,6 +99,10 @@ class ProductListView(generics.ListAPIView):
     
     # 3. Ordering Fields
     ordering_fields = ['price', 'created_at', 'name']
+
+    @method_decorator(cache_page(60 * 15)) 
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
 # class ProductDetailView(generics.RetrieveAPIView):
 #     """

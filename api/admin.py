@@ -78,7 +78,10 @@ class OrderItemInline(admin.TabularInline):
     can_delete = False
 
     def subtotal(self, obj):
-        return f"₦{obj.price * obj.quantity}"
+        # Safety Check: If price or quantity is missing, return 0
+        price = obj.price if obj.price is not None else 0
+        qty = obj.quantity if obj.quantity is not None else 0
+        return f"₦{price * qty}"
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):

@@ -113,6 +113,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny', # We lock down specific views later
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle', # For guests
+        'rest_framework.throttling.UserRateThrottle'  # For logged-in users
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',   # Guests can only hit 100 times/day
+        'user': '1000/day',  # Users get 1000
+        'burst': '60/min',   # Custom scope for heavy actions
+    }
 }
 
 from datetime import timedelta
@@ -146,3 +155,56 @@ PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_URL = os.getenv('PAYSTACK_URL')
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# config/settings.py
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'errors.log', # Saves to project root
+            'formatter': 'verbose',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# config/settings.py
+
+# SECURITY SETTINGS (Uncomment these when deploying to a live server)
+# SECURE_BROWSER_XSS_FILTER = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SESSION_COOKIE_SECURE = True  # Requires HTTPS
+# CSRF_COOKIE_SECURE = True     # Requires HTTPS
+# SECURE_SSL_REDIRECT = True    # Forces HTTPS
+
+# CORS SETTINGS (Restrict API access to your domain only)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    # "https://yourdomain.com", # Add your domain later
+]

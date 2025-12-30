@@ -111,7 +111,12 @@
                                 </p>
                                 <p class="mb-2">
                                     <strong>Status:</strong> 
-                                    ${order.is_paid ? '<span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>' : '<span class="text-warning"><i class="fas fa-clock"></i> Pending Payment</span>'}
+                                    ${order.is_paid 
+                                        ? '<span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>' 
+                                        : (order.payment_method === 'pod' && order.status !== 'delivered' 
+                                            ? '<span class="text-secondary"><i class="fas fa-hand-holding-usd"></i> Pay on Delivery</span>'
+                                            : '<span class="text-warning"><i class="fas fa-clock"></i> Pending Payment</span>')
+                                    }
                                 </p>
                                 <p class="mb-0 small text-muted">Date: ${new Date(order.created_at).toLocaleString()}</p>
                             </div>
