@@ -27,6 +27,9 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Cart, CartItem, Product
 from .serializers import CartSerializer
 
+from core.paystack import Paystack
+
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -229,4 +232,151 @@ class CheckoutView(views.APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": "Checkout failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PaymentVerifyView(views.APIView):
+    """
+    Called by Frontend after Paystack redirect return.
+    """
+    permission_classes = [AllowAny] # Public, because Paystack/Browser calls it
+
+    def get(self, request):
+        reference = request.query_params.get('reference')
+        if not reference:
+            return Response({"error": "No reference provided"}, status=400)
+
+        paystack = Paystack()
+        res = paystack.verify_transaction(reference)
+
+        if res['status']:
+            # Find order and mark as paid
+            try:
+                order = Order.objects.get(payment_reference=reference)
+                order.is_paid = True
+                order.status = 'paid'
+                order.save()
+                return Response({"status": "success", "message": "Payment verified"})
+            except Order.DoesNotExist:
+                return Response({"error": "Order not found"}, status=404)
+        
+        return Response({"status": "failed", "message": "Payment verification failed"}, status=400)
+
+
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+from rest_framework import status, views, generics
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+# --- IMPORT MODELS HERE (Make sure Cart is included) ---
+from .models import Product, Category, Cart, CartItem, Order, OrderItem
+from .serializers import ProductSerializer, CategorySerializer, CartSerializer, OrderSerializer
+from core.paystack import Paystack
+
+class CheckoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # 1. Get User's Cart
+        try:
+            cart = Cart.objects.get(user=request.user)
+            if not cart.items.exists():
+                return Response({"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+        except Cart.DoesNotExist:
+            return Response({"error": "No cart found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Extract Shipping Data
+        data = request.data
+        payment_method = data.get('payment_method', 'paystack')
+
+        # 3. Database Transaction
+        try:
+            with transaction.atomic():
+                # A. Create Order
+                order = Order.objects.create(
+                    user=request.user,
+                    full_name=data.get('full_name'),
+                    address=data.get('address'),
+                    city=data.get('city'),
+                    state=data.get('state'),
+                    phone=data.get('phone'),
+                    total_amount=cart.total_price,
+                    payment_method=payment_method
+                )
+
+                # B. Move Items & Deduct Stock
+                items_to_create = []
+                for item in cart.items.select_related('product'):
+                    product = item.product
+                    
+                    if product.stock < item.quantity:
+                        raise ValueError(f"Not enough stock for {product.name}")
+
+                    product.stock -= item.quantity
+                    product.save()
+
+                    items_to_create.append(OrderItem(
+                        order=order,
+                        product=product,
+                        product_name=product.name,
+                        price=product.price,
+                        quantity=item.quantity
+                    ))
+
+                OrderItem.objects.bulk_create(items_to_create)
+
+                # C. Clear Cart
+                cart.items.all().delete()
+                
+                # --- D. PAYMENT PROCESSING ---
+                
+                # Option A: Paystack
+                if payment_method == 'paystack':
+                    paystack = Paystack()
+                    res = paystack.initialize_transaction(
+                        email=request.user.email,
+                        amount=order.total_amount,
+                        order_id=order.id
+                    )
+                    
+                    if res['status']:
+                        order.payment_reference = res['reference']
+                        order.save()
+                        
+                        return Response({
+                            "message": "Order created. Redirecting to payment.",
+                            "payment_url": res['auth_url'],
+                            "type": "paystack"
+                        }, status=status.HTTP_201_CREATED)
+                    else:
+                        raise ValueError("Paystack initialization failed.")
+
+                # Option B: Payment on Delivery / Transfer
+                else:
+                    return Response({
+                        "message": "Order placed successfully!",
+                        "type": "pod"
+                    }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # This captures the "NameError" if imports are missing
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+
+class OrderListView(generics.ListAPIView):
+    """ List all orders for the logged-in user """
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by('-created_at')
+
+class OrderDetailView(generics.RetrieveAPIView):
+    """ View specific order details """
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        # Ensure user can only see their OWN orders
+        return Order.objects.filter(user=self.request.user)
 

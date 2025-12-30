@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center py-5 mt-5">
+    <div id="loader">
+        <div class="spinner-border text-primary" role="status"></div>
+        <h3 class="mt-3">Verifying Payment...</h3>
+    </div>
+    
+    <div id="success" class="d-none">
+        <i class="fas fa-check-circle text-success fa-5x mb-3"></i>
+        <h2>Payment Successful!</h2>
+        <p class="lead">Your order is now being processed.</p>
+        <a href="/" class="btn btn-primary">Continue Shopping</a>
+    </div>
+
+    <div id="error" class="d-none">
+        <i class="fas fa-times-circle text-danger fa-5x mb-3"></i>
+        <h2>Verification Failed</h2>
+        <p>We couldn't verify your payment. Please contact support.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Get Reference from URL (Paystack sends ?reference=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const reference = urlParams.get('reference');
+
+        if(reference) {
+            try {
+                const response = await fetch(`/api/payment/verify/?reference=${reference}`);
+                const data = await response.json();
+                
+                document.getElementById('loader').classList.add('d-none');
+                
+                if(data.status === 'success') {
+                    document.getElementById('success').classList.remove('d-none');
+                } else {
+                    document.getElementById('error').classList.remove('d-none');
+                }
+            } catch(e) {
+                document.getElementById('loader').classList.add('d-none');
+                document.getElementById('error').classList.remove('d-none');
+            }
+        } else {
+             document.getElementById('loader').classList.add('d-none');
+             document.getElementById('error').innerHTML = '<h2>Invalid Link</h2>';
+             document.getElementById('error').classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %}

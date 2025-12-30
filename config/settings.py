@@ -141,3 +141,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Prints to te
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 
 DEFAULT_FROM_EMAIL = 'Django Store <noreply@nurastire.com>'
+# Payment Config
+PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_URL = os.getenv('PAYSTACK_URL')
+

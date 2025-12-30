@@ -76,6 +76,11 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     )
+    PAYMENT_METHOD_CHOICES = (
+        ('paystack', 'Paystack (Card/Transfer/USSD)'),
+        ('pod', 'Payment on Delivery'),
+        ('transfer', 'Direct Bank Transfer'),
+    )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     
@@ -89,6 +94,10 @@ class Order(models.Model):
     # Financials
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='paystack')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True) # The Paystack Ref
+    is_paid = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

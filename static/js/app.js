@@ -351,6 +351,11 @@ const App = {
 
     // 10. API Action: Place Order
     placeOrder: async function(formData, btn, originalText) {
+        
+        // 1. Get Selected Payment Method
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        formData.payment_method = paymentMethod;
+
         try {
             const response = await fetch('/api/checkout/', {
                 method: 'POST',
@@ -364,16 +369,23 @@ const App = {
             const data = await response.json();
 
             if (response.ok) {
-                // Success! Redirect to "Order Success" (We'll build this next, or reuse Index for now)
-                this.showToast('Order placed successfully!', 'success');
-                setTimeout(() => window.location.href = '/', 2000); 
-                // In Phase 9, we will redirect to /payment instead
+                // CASE A: Paystack Redirect
+                if (data.type === 'paystack' && data.payment_url) {
+                    this.showToast('Redirecting to secure payment...', 'success');
+                    window.location.href = data.payment_url; 
+                } 
+                // CASE B: Payment on Delivery / Offline
+                else {
+                    this.showToast('Order placed successfully!', 'success');
+                    setTimeout(() => window.location.href = '/order-success', 2000); // We will build this page next
+                }
             } else {
                 this.showToast(data.error || 'Checkout failed', 'error');
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
         } catch (e) {
+            console.error(e);
             this.showToast('Connection failed', 'error');
             btn.innerText = originalText;
             btn.disabled = false;

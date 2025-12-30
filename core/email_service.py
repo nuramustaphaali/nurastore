@@ -63,3 +63,32 @@ class EmailService:
             html_content=html_content,
             text_content=text_content
         ).start()
+
+
+    @staticmethod
+    def send_order_status_email(order):
+        """
+        Sends an email when order status changes.
+        """
+        subject = f"Order Update: #{order.id} is {order.get_status_display()}"
+        
+        # Simple HTML Template for status
+        html_content = f"""
+        <html>
+        <body>
+            <h2>Order Update</h2>
+            <p>Hello {order.user.username},</p>
+            <p>Your order <strong>#{order.id}</strong> status has been updated to:</p>
+            <h3 style="color: #0d6efd;">{order.get_status_display()}</h3>
+            <p>Total Amount: ₦{order.total_amount}</p>
+            <p>Login to your account to view details.</p>
+        </body>
+        </html>
+        """
+        
+        EmailThread(
+            subject=subject,
+            recipient_list=[order.user.email],
+            html_content=html_content,
+            text_content=f"Your order #{order.id} is now {order.get_status_display()}."
+        ).start()

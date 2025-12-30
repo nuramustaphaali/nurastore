@@ -15,3 +15,9 @@ def register_view(request):
 
 def checkout_view(request):
     return render(request, 'web/checkout.html')
+
+def order_success_view(request):
+    return render(request, 'web/order_success.html')
+
+def orders_view(request):
+    return render(request, 'web/orders.html')

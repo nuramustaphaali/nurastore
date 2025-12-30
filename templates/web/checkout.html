@@ -42,6 +42,37 @@
 
                 <hr class="my-4">
 
+                <h4 class="mb-3">Payment Method</h4>
+
+                <div class="my-3">
+                    <div class="form-check">
+                        <input id="paystack" name="paymentMethod" type="radio" class="form-check-input" value="paystack" checked>
+                        <label class="form-check-label" for="paystack">
+                            Pay with Card / Transfer (Paystack)
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/db/Paystack_Logo.png" alt="Paystack" height="20" class="ms-2">
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input id="pod" name="paymentMethod" type="radio" class="form-check-input" value="pod">
+                        <label class="form-check-label" for="pod">
+                            Payment on Delivery (Cash/POS)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input id="transfer" name="paymentMethod" type="radio" class="form-check-input" value="transfer">
+                        <label class="form-check-label" for="transfer">
+                            Direct Bank Transfer
+                        </label>
+                    </div>
+                </div>
+
+                <div id="transfer-details" class="alert alert-info d-none">
+                    <strong>Bank Details:</strong><br>
+                    GTBank - 0123456789<br>
+                    Account Name: Adashe Project<br>
+                    <small>Please use your Order ID as reference.</small>
+                </div>
+
                 <button class="btn btn-primary btn-lg w-100" type="submit">Place Order</button>
             </form>
         </div>

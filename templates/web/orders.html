@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}My Orders | Django Store{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h3 class="mb-4">My Order History</h3>
+    
+    <div id="orders-container">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('orders-container');
+        
+        try {
+            const response = await fetch('/api/orders/', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            const orders = await response.json();
+
+            if(orders.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">You have not placed any orders yet.</div>';
+                return;
+            }
+
+            let html = '';
+            orders.forEach(order => {
+                // Color code statuses
+                let badgeClass = 'bg-secondary';
+                if(order.status === 'paid') badgeClass = 'bg-info';
+                if(order.status === 'shipped') badgeClass = 'bg-primary';
+                if(order.status === 'delivered') badgeClass = 'bg-success';
+
+                // Format Date
+                const date = new Date(order.created_at).toLocaleDateString();
+
+                html += `
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Order #${order.id}</strong>
+                            <span class="text-muted ms-2">| ${date}</span>
+                        </div>
+                        <span class="badge ${badgeClass}">${order.status.toUpperCase()}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="mb-1"><strong>Total:</strong> ₦${parseFloat(order.total_amount).toLocaleString()}</p>
+                                <p class="mb-1 text-muted small">Items: ${order.items.length}</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="#" class="btn btn-outline-primary btn-sm">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+
+        } catch(e) {
+            container.innerHTML = '<div class="alert alert-danger">Failed to load orders. Please login.</div>';
+        }
+    });
+</script>
+{% endblock %}
