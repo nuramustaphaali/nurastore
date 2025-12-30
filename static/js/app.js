@@ -115,29 +115,45 @@ const App = {
                 const priceFormatted = parseFloat(product.price).toLocaleString();
                 const oldPriceFormatted = product.old_price ? parseFloat(product.old_price).toLocaleString() : null;
 
+                // ... inside fetchProducts, inside products.forEach(product => { ...
+
                 const html = `
                 <div class="col">
-                    <div class="card h-100 shadow-sm border-0">
+                    <div class="card h-100 shadow-sm border-0 product-card">
                         <div class="position-relative">
                             ${badge}
-                            <img src="${imgUrl}" class="card-img-top" alt="${product.name}" style="height: 220px; object-fit: cover;">
+                            <a href="/product/${product.slug}/">
+                                <img src="${imgUrl}" class="card-img-top" alt="${product.name}" style="height: 220px; object-fit: cover;">
+                            </a>
                         </div>
                         <div class="card-body d-flex flex-column">
                             <small class="text-muted mb-1 text-uppercase" style="font-size: 0.75rem;">${product.category_name}</small>
-                            <h5 class="card-title text-truncate">${product.name}</h5>
+                            
+                            <a href="/product/${product.slug}/" class="text-decoration-none text-dark">
+                                <h5 class="card-title text-truncate">${product.name}</h5>
+                            </a>
+                            
                             <div class="mt-auto pt-3">
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <span class="fs-5 fw-bold text-dark">₦${priceFormatted}</span>
                                     ${oldPriceFormatted ? `<small class="text-muted text-decoration-line-through">₦${oldPriceFormatted}</small>` : ''}
                                 </div>
-                                <button class="btn btn-outline-primary w-100" onclick="App.addToCart(${product.id})">
-                                    <i class="fas fa-cart-plus me-1"></i> Add to Cart
-                                </button>
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="/product/${product.slug}/" class="btn btn-outline-secondary flex-grow-1">
+                                        View
+                                    </a>
+                                    <button class="btn btn-primary flex-grow-1" onclick="App.addToCart(${product.id})">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>`;
                 container.insertAdjacentHTML('beforeend', html);
+            
+            // ... end of loop
             });
 
         } catch (error) {

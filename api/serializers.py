@@ -4,6 +4,8 @@ from core.models import Profile
 from .models import Product, Category
 from .models import Cart, CartItem
 from .models import Order, OrderItem
+from django.db.models import Avg
+from .models import Review
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -90,3 +92,36 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'status', 'total_amount', 'created_at', 'items', 'full_name', 'address', 'city', 'state', 'phone']
         read_only_fields = ['id', 'status', 'total_amount', 'created_at', 'items']
 
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ['id', 'user_name', 'rating', 'comment', 'created_at', 'is_verified_purchase']
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    """
+    Rich serializer for the single product page.
+    Includes average rating and the actual reviews list.
+    """
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'description', 'price', 
+            'old_price', 'image', 'stock', 'category_name',
+            'reviews', 'average_rating', 'review_count'
+        ]
+
+    def get_average_rating(self, obj):
+        avg = obj.reviews.aggregate(Avg('rating'))['rating__avg']
+        return round(avg, 1) if avg else 0
+
+    def get_review_count(self, obj):
+        return obj.reviews.count()

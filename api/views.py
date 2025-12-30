@@ -30,6 +30,11 @@ from .serializers import CartSerializer
 from core.paystack import Paystack
 
 
+from .models import Review
+from .serializers import ReviewSerializer, ProductDetailSerializer
+
+
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -95,14 +100,14 @@ class ProductListView(generics.ListAPIView):
     # 3. Ordering Fields
     ordering_fields = ['price', 'created_at', 'name']
 
-class ProductDetailView(generics.RetrieveAPIView):
-    """
-    Returns details of a single product by slug.
-    """
-    queryset = Product.objects.filter(is_available=True)
-    serializer_class = ProductSerializer
-    permission_classes = [AllowAny]
-    lookup_field = 'slug'
+# class ProductDetailView(generics.RetrieveAPIView):
+#     """
+#     Returns details of a single product by slug.
+#     """
+#     queryset = Product.objects.filter(is_available=True)
+#     serializer_class = ProductSerializer
+#     permission_classes = [AllowAny]
+#     lookup_field = 'slug'
 
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
@@ -410,3 +415,64 @@ class DeliveryZoneListView(views.APIView):
     def get(self, request):
         zones = DeliveryZone.objects.filter(is_active=True).values('id', 'state', 'fee', 'estimated_time')
         return Response(list(zones))
+
+
+# A. Product Detail (Single Page)
+class ProductDetailView(generics.RetrieveAPIView):
+    queryset = Product.objects.filter(is_available=True)
+    serializer_class = ProductDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+
+# B. Create Review (With Verification Logic)
+class CreateReviewView(generics.CreateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        product_id = self.kwargs['product_id']
+        product = get_object_or_404(Product, id=product_id)
+        user = self.request.user
+
+        # 1. Prevent Duplicates
+        if Review.objects.filter(product=product, user=user).exists():
+            raise serializers.ValidationError("You have already reviewed this product.")
+
+        # 2. Check for Verified Purchase
+        # We check if this user has any DELIVERED order containing this product
+        has_purchased = OrderItem.objects.filter(
+            order__user=user, 
+            order__status='delivered', 
+            product=product
+        ).exists()
+
+        serializer.save(user=user, product=product, is_verified_purchase=has_purchased)
+
+# C. User Profile (Get & Update)
+class UserProfileDetailView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        profile = user.profile
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "phone": profile.phone,
+            "address": profile.address,
+            "city": profile.city,
+            "state": profile.state
+        })
+
+    def put(self, request):
+        user = request.user
+        data = request.data
+        
+        # Update Profile Fields
+        user.profile.phone = data.get('phone', user.profile.phone)
+        user.profile.address = data.get('address', user.profile.address)
+        user.profile.city = data.get('city', user.profile.city)
+        user.profile.state = data.get('state', user.profile.state)
+        user.profile.save()
+        
+        return Response({"message": "Profile updated successfully"})

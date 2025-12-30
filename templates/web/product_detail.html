@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}Product Details | Django Store{% endblock %}
+
+{% block content %}
+<div class="container py-5" id="product-container">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Loading Product Details...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('product-container');
+        
+        // Safety Check: If container is missing, stop immediately to avoid error
+        if (!container) {
+            console.error("Critical Error: element with id 'product-container' not found in DOM.");
+            return;
+        }
+
+        // 1. Get Slug from URL (Robust Method)
+        // Splits URL by '/' and takes the last non-empty segment
+        const slug = window.location.pathname.split('/').filter(Boolean).pop();
+        console.log("Fetching product:", slug);
+
+        try {
+            // 2. Fetch Data from API
+            const response = await fetch(`/api/products/detail/${slug}/`);
+            
+            if(!response.ok) {
+                // Handle 404 (Product Not Found)
+                if (response.status === 404) throw new Error("Product not found");
+                throw new Error(`API Error ${response.status}`);
+            }
+
+            const product = await response.json();
+            
+            // 3. Helper: Star Rating HTML Generator
+            const getStars = (rating) => {
+                let html = '';
+                for(let i=1; i<=5; i++) {
+                    if(i <= rating) html += '<i class="fas fa-star text-warning"></i>';
+                    else if(i - 0.5 <= rating) html += '<i class="fas fa-star-half-alt text-warning"></i>';
+                    else html += '<i class="far fa-star text-muted"></i>';
+                }
+                return html;
+            };
+
+            // 4. Render the Page
+            container.innerHTML = `
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <img src="${product.image ? product.image : 'https://via.placeholder.com/600x600?text=No+Image'}" 
+                         class="img-fluid rounded shadow w-100" 
+                         alt="${product.name}" 
+                         style="max-height: 500px; object-fit: cover;">
+                </div>
+
+                <div class="col-md-6">
+                    <div class="badge bg-secondary mb-2">${product.category_name || 'General'}</div>
+                    <h1 class="fw-bold mb-2">${product.name}</h1>
+                    
+                    <div class="mb-3 d-flex align-items-center">
+                        <div class="me-2">${getStars(product.average_rating)}</div>
+                        <span class="text-muted small">(${product.review_count} reviews)</span>
+                    </div>
+
+                    <h2 class="text-primary mb-4">
+                        ₦${parseFloat(product.price).toLocaleString()}
+                        ${product.old_price ? `<small class="text-decoration-line-through text-muted fs-5">₦${parseFloat(product.old_price).toLocaleString()}</small>` : ''}
+                    </h2>
+
+                    <p class="lead text-muted mb-5">${product.description}</p>
+
+                    <div class="card bg-light border-0 p-3">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg" onclick="App.addToCart(${product.id})">
+                                <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                            </button>
+                        </div>
+                        <div class="text-center mt-2 small text-muted">
+                            <i class="fas fa-shield-alt"></i> Secure Payment & Fast Delivery
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-5">
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <h3 class="mb-4">Customer Reviews</h3>
+                    
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Write a Review</h5>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="postReview(event, ${product.id})">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <select class="form-select" id="r-rating" required>
+                                            <option value="">Select Rating...</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                                            <option value="4">⭐⭐⭐⭐ (Good)</option>
+                                            <option value="3">⭐⭐⭐ (Average)</option>
+                                            <option value="2">⭐⭐ (Poor)</option>
+                                            <option value="1">⭐ (Terrible)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="r-comment" placeholder="Share your experience..." required>
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-dark">Post Review</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="review-list">
+                        ${product.reviews.length === 0 ? 
+                          '<div class="alert alert-light border">No reviews yet. Be the first to review!</div>' : 
+                          product.reviews.map(r => `
+                            <div class="d-flex mb-4 border-bottom pb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 50px; height: 50px;">
+                                        ${r.user_name.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="fw-bold mb-0">${r.user_name} 
+                                            ${r.is_verified_purchase ? '<span class="badge bg-success ms-2" style="font-size:0.7em"><i class="fas fa-check-circle"></i> Verified Purchase</span>' : ''}
+                                        </h6>
+                                        <small class="text-muted">${new Date(r.created_at).toLocaleDateString()}</small>
+                                    </div>
+                                    <div class="mb-1">${getStars(r.rating)}</div>
+                                    <p class="mb-0 text-muted">${r.comment}</p>
+                                </div>
+                            </div>
+                          `).join('')}
+                    </div>
+                </div>
+            </div>
+            `;
+
+        } catch(e) {
+            console.error("Full Error Details:", e);
+            container.innerHTML = `
+                <div class="alert alert-danger text-center shadow-sm">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Oops!</h4>
+                    <p class="mb-0">We couldn't load this product.</p>
+                    <small class="text-muted">${e.message}</small>
+                    <div class="mt-3">
+                        <a href="/" class="btn btn-outline-dark btn-sm">Return to Home</a>
+                    </div>
+                </div>`;
+        }
+    });
+
+    async function postReview(e, pid) {
+        e.preventDefault();
+        
+        // Auth Check
+        if (!localStorage.getItem('access_token')) {
+            alert("Please login to write a review.");
+            window.location.href = '/login';
+            return;
+        }
+
+        const rating = document.getElementById('r-rating').value;
+        const comment = document.getElementById('r-comment').value;
+
+        try {
+            const res = await fetch(`/api/products/${pid}/reviews/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({ rating, comment })
+            });
+            
+            const data = await res.json();
+
+            if(res.ok) {
+                alert('Review Submitted Successfully!');
+                window.location.reload();
+            } else {
+                // Clean error message
+                let msg = 'Failed to submit review.';
+                if(data.detail) msg = data.detail;
+                if(data.non_field_errors) msg = data.non_field_errors[0];
+                alert(msg);
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("Connection error. Please try again.");
+        }
+    }
+</script>
+{% endblock %}

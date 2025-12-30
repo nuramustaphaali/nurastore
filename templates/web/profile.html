@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form id="profile-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Username</label>
+                                <input type="text" id="p-username" class="form-control" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email</label>
+                                <input type="email" id="p-email" class="form-control" disabled>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" id="p-phone" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Address</label>
+                            <textarea id="p-address" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <input type="text" id="p-city" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">State</label>
+                                <input type="text" id="p-state" class="form-control">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('access_token');
+        if(!token) window.location.href = '/login';
+
+        // Load Data
+        const res = await fetch('/api/profile/', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        document.getElementById('p-username').value = data.username;
+        document.getElementById('p-email').value = data.email;
+        document.getElementById('p-phone').value = data.phone || '';
+        document.getElementById('p-address').value = data.address || '';
+        document.getElementById('p-city').value = data.city || '';
+        document.getElementById('p-state').value = data.state || '';
+
+        // Save Data
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                phone: document.getElementById('p-phone').value,
+                address: document.getElementById('p-address').value,
+                city: document.getElementById('p-city').value,
+                state: document.getElementById('p-state').value,
+            };
+
+            const saveRes = await fetch('/api/profile/', {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if(saveRes.ok) alert('Profile updated successfully!');
+        });
+    });
+</script>
+{% endblock %}
