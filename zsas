@@ -273,11 +273,15 @@ Provide full operational control to system owners.
 3. Manual order interventions.
 4. Email resend and override tools.
 5. Sales and performance reports.
+6. name the urls '/adminBest' if relevant
 
 **Outcome:**
 A manageable and scalable business system.
 
 ---
+
+NOW, ADD ORDER_DETAILS PAGE AND CONNECT IT WITH ORDER OF A USER, TO SIPLAY FULL ORDER BREAKDOWN.
+
 
 # **PHASE 14: PERFORMANCE, SECURITY & SCALABILITY**
 

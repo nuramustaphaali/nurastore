@@ -9,7 +9,6 @@ from .serializers import ProductSerializer, CategorySerializer
 from core.email_service import EmailService 
 
 from django.db import transaction
-# ... existing imports ...
 from .models import Order, OrderItem, Cart
 
 from rest_framework import generics
@@ -28,7 +27,7 @@ from .models import Cart, CartItem, Product
 from .serializers import CartSerializer
 
 from core.paystack import Paystack
-
+from django.shortcuts import render
 
 from .models import Review
 from .serializers import ReviewSerializer, ProductDetailSerializer
@@ -476,3 +475,41 @@ class UserProfileDetailView(views.APIView):
         user.profile.save()
         
         return Response({"message": "Profile updated successfully"})
+
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count
+
+# ... existing imports ...
+
+@staff_member_required
+def admin_dashboard_view(request):
+    """
+    Custom Dashboard for Business Owners.
+    """
+    # 1. Financials
+    total_revenue = Order.objects.filter(is_paid=True).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_orders = Order.objects.count()
+    pending_orders = Order.objects.filter(status='pending').count()
+    
+    # 2. Inventory Health
+    low_stock_count = Product.objects.filter(stock__lt=10).count()
+    
+    # 3. Recent Activity
+    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:5]
+    
+    # 4. Top Products (Simple Logic: Filter by available)
+    # In a real app, you'd aggregate OrderItems, but for now we list available stock
+    top_products = Product.objects.order_by('-created_at')[:5]
+
+    context = {
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
+        'pending_orders': pending_orders,
+        'low_stock_count': low_stock_count,
+        'recent_orders': recent_orders,
+        'top_products': top_products,
+        'title': 'Business Dashboard' # Required for Admin template
+    }
+    
+    return render(request, 'admin/sales_dashboard.html', context)

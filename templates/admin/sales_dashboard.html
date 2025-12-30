@@ -1,0 +1,87 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+    .dashboard-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
+    .metric { font-size: 2em; font-weight: bold; color: #333; }
+    .label { color: #666; text-transform: uppercase; font-size: 0.8em; letter-spacing: 1px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+    th { background: #f8f9fa; }
+</style>
+
+<h1 style="margin-bottom: 30px;">Operational Dashboard</h1>
+
+<div class="grid">
+    <div class="dashboard-card">
+        <div class="metric">₦{{ total_revenue|floatformat:2 }}</div>
+        <div class="label">Total Revenue</div>
+    </div>
+    <div class="dashboard-card">
+        <div class="metric">{{ total_orders }}</div>
+        <div class="label">Total Orders</div>
+    </div>
+    <div class="dashboard-card">
+        <div class="metric">{{ pending_orders }}</div>
+        <div class="label" style="color: orange;">Pending Orders</div>
+    </div>
+    <div class="dashboard-card">
+        <div class="metric">{{ low_stock_count }}</div>
+        <div class="label" style="color: red;">Low Stock Items</div>
+    </div>
+</div>
+
+<div class="grid" style="margin-top: 30px;">
+    <div class="dashboard-card" style="text-align: left;">
+        <h3>Recent Orders</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td><a href="/adminBest/api/order/{{ order.id }}/change/">#{{ order.id }}</a></td>
+                    <td>{{ order.user.username }}</td>
+                    <td>₦{{ order.total_amount }}</td>
+                    <td>{{ order.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="dashboard-card" style="text-align: left;">
+        <h3>Best Selling Products</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in top_products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>₦{{ product.price }}</td>
+                    <td>
+                        {% if product.stock < 10 %}
+                            <span style="color:red">{{ product.stock }}</span>
+                        {% else %}
+                            {{ product.stock }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

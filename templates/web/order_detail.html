@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Order Details | Django Store{% endblock %}
+
+{% block content %}
+<div class="container py-5" id="order-container">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Loading Order Details...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('order-container');
+        
+        // 1. Get Order ID from URL (e.g., /orders/5/ -> ID is 5)
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const orderId = pathParts[pathParts.length - 1]; // Last part is the ID
+
+        if (!orderId || isNaN(orderId)) {
+            container.innerHTML = '<div class="alert alert-danger">Invalid Order ID</div>';
+            return;
+        }
+
+        try {
+            // 2. Fetch Data
+            const response = await fetch(`/api/orders/${orderId}/`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+
+            if (!response.ok) throw new Error("Order not found or access denied.");
+
+            const order = await response.json();
+
+            // 3. Helper: Status Color
+            const getStatusColor = (status) => {
+                if(status === 'pending') return 'bg-warning text-dark';
+                if(status === 'paid') return 'bg-info text-white';
+                if(status === 'processing') return 'bg-primary text-white';
+                if(status === 'shipped') return 'bg-primary text-white';
+                if(status === 'delivered') return 'bg-success text-white';
+                return 'bg-secondary text-white';
+            };
+
+            // 4. Render UI
+            container.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Order #${order.id}</h2>
+                    <span class="badge ${getStatusColor(order.status)} fs-6 px-3 py-2 text-uppercase">${order.status}</span>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">Items Ordered</h5>
+                            </div>
+                            <div class="card-body">
+                                ${order.items.map(item => `
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 last-no-border">
+                                        <div>
+                                            <h6 class="fw-bold mb-1">${item.product_name}</h6>
+                                            <small class="text-muted">Quantity: ${item.quantity} x ₦${parseFloat(item.price).toLocaleString()}</small>
+                                        </div>
+                                        <div class="fw-bold">
+                                            ₦${(item.price * item.quantity).toLocaleString()}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                
+                                <div class="d-flex justify-content-between mt-3">
+                                    <span class="text-muted">Subtotal</span>
+                                    <span>₦${(parseFloat(order.total_amount) - parseFloat(order.delivery_fee || 0)).toLocaleString()}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <span class="text-muted">Delivery Fee</span>
+                                    <span>₦${parseFloat(order.delivery_fee || 0).toLocaleString()}</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fs-5 fw-bold">
+                                    <span>Total Amount</span>
+                                    <span class="text-primary">₦${parseFloat(order.total_amount).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">Shipping Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="fw-bold mb-1">${order.full_name}</p>
+                                <p class="mb-1 text-muted">${order.address}</p>
+                                <p class="mb-1 text-muted">${order.city}, ${order.state}</p>
+                                <p class="mb-0 text-muted"><i class="fas fa-phone-alt me-2"></i>${order.phone}</p>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">Payment Info</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    <strong>Method:</strong> 
+                                    ${order.payment_method === 'paystack' ? 'Paystack (Card/Transfer)' : 'Payment on Delivery'}
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Status:</strong> 
+                                    ${order.is_paid ? '<span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>' : '<span class="text-warning"><i class="fas fa-clock"></i> Pending Payment</span>'}
+                                </p>
+                                <p class="mb-0 small text-muted">Date: ${new Date(order.created_at).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <a href="/orders" class="btn btn-outline-secondary w-100">Back to My Orders</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <h4>Failed to load order.</h4>
+                    <p>Please check your connection or login again.</p>
+                    <a href="/orders" class="btn btn-primary mt-2">Back to Orders</a>
+                </div>`;
+        }
+    });
+</script>
+
+<style>
+    .last-no-border:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+</style>
+{% endblock %}

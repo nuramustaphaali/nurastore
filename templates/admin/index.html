@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div style="margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 5px; border-left: 5px solid #0d6efd;">
+    <h2 style="margin: 0;">Business Command Center</h2>
+    <p>View sales performance, inventory alerts, and revenue reports.</p>
+    <a href="/api/dashboard-report/" class="button" style="background: #0d6efd; padding: 10px 20px; text-decoration: none; color: white; border-radius: 4px;">
+        Open Sales Dashboard
+    </a>
+</div>
+
+{{ block.super }}
+{% endblock %}

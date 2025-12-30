@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from .views import (
-    ProductListView, ProductDetailView, CategoryListView, 
+    ProductListView, admin_dashboard_view, ProductDetailView, CategoryListView, 
     CreateReviewView, UserProfileDetailView # Ensure these are imported
 )
 
@@ -30,6 +30,6 @@ urlpatterns = [
 
     path('orders/', OrderListView.as_view(), name='order_list'),
     path('orders/<int:id>/', OrderDetailView.as_view(), name='order_detail'),
-
+    path('dashboard-report/', admin_dashboard_view, name='admin_dashboard'),
     path('delivery-zones/', DeliveryZoneListView.as_view(), name='delivery_zones'),
 ]
