@@ -6,3 +6,9 @@ def index(request):
     Data will be fetched via JS from the API later.
     """
     return render(request, 'web/index.html')
+
+def login_view(request):
+    return render(request, 'web/login.html')
+
+def register_view(request):
+    return render(request, 'web/register.html')
