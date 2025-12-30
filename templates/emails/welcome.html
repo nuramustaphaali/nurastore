@@ -1,0 +1,13 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+    <h2>Welcome, {{ username }}!</h2>
+    <p>We are thrilled to have you on board. Your account has been successfully created.</p>
+    <p>You can now log in to start shopping for the best deals.</p>
+    
+    <center>
+        <a href="http://127.0.0.1:8000/login" class="btn">Login to Account</a>
+    </center>
+    
+    <p>Happy Shopping,<br>The Nura Store Team</p>
+{% endblock %}

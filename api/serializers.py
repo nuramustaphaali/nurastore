@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from core.models import Profile
+from .models import Product, Category
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,10 +19,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ('username', 'email', 'password', 'confirm_password')
 
     def validate(self, attrs):
+        # 1. Check if passwords match
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        
+        # 2. Check if email exists
         if User.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Email is already in use."})
+            
+        # 3. Check if username exists (ADDED THIS TO FIX YOUR CRASH)
+        if User.objects.filter(username=attrs['username']).exists():
+            raise serializers.ValidationError({"username": "This username is already taken."})
+            
         return attrs
 
     def create(self, validated_data):
@@ -30,3 +40,20 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug']
+
+class ProductSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'description', 'price', 
+            'old_price', 'image', 'stock', 'category', 'category_name'
+        ]

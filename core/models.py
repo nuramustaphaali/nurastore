@@ -29,3 +29,23 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+class EmailLog(models.Model):
+    """
+    Tracks every email sent by the system for auditing and debugging.
+    """
+    STATUS_CHOICES = (
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('pending', 'Pending'),
+    )
+
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    body = models.TextField() # Store the HTML or Text content
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.subject} -> {self.recipient} ({self.status})"
