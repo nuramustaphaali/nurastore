@@ -15,9 +15,9 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById('order-container');
         
-        // 1. Get Order ID from URL (e.g., /orders/5/ -> ID is 5)
+        // 1. Get Order ID from URL
         const pathParts = window.location.pathname.split('/').filter(Boolean);
-        const orderId = pathParts[pathParts.length - 1]; // Last part is the ID
+        const orderId = pathParts[pathParts.length - 1];
 
         if (!orderId || isNaN(orderId)) {
             container.innerHTML = '<div class="alert alert-danger">Invalid Order ID</div>';
@@ -34,21 +34,38 @@
 
             const order = await response.json();
 
-            // 3. Helper: Status Color
+            // 3. Helper: Status Badge Color
             const getStatusColor = (status) => {
-                if(status === 'pending') return 'bg-warning text-dark';
-                if(status === 'paid') return 'bg-info text-white';
-                if(status === 'processing') return 'bg-primary text-white';
-                if(status === 'shipped') return 'bg-primary text-white';
-                if(status === 'delivered') return 'bg-success text-white';
+                const s = status.toLowerCase();
+                if(s === 'pending') return 'bg-warning text-dark';
+                if(s === 'paid') return 'bg-info text-white';
+                if(s === 'processing') return 'bg-primary text-white';
+                if(s === 'shipped') return 'bg-primary text-white';
+                if(s === 'delivered') return 'bg-success text-white';
+                if(s === 'cancelled') return 'bg-danger text-white';
                 return 'bg-secondary text-white';
             };
 
-            // 4. Render UI
+            // 4. SMART PAYMENT STATUS LOGIC
+            // This fixes your issue. It checks the boolean first.
+            let paymentStatusHtml = '';
+            
+            if (order.is_paid) {
+                // If DB says paid, it is PAID.
+                paymentStatusHtml = '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Paid</span>';
+            } else if (order.payment_method === 'pod' && order.status !== 'cancelled') {
+                // If not paid, but it is Cash on Delivery
+                paymentStatusHtml = '<span class="text-secondary fw-bold"><i class="fas fa-hand-holding-usd"></i> Pay on Delivery</span>';
+            } else {
+                // Default pending
+                paymentStatusHtml = '<span class="text-warning fw-bold"><i class="fas fa-clock"></i> Pending Payment</span>';
+            }
+
+            // 5. Render UI
             container.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="mb-0">Order #${order.id}</h2>
-                    <span class="badge ${getStatusColor(order.status)} fs-6 px-3 py-2 text-uppercase">${order.status}</span>
+                    <span class="badge ${getStatusColor(order.status)} fs-6 px-3 py-2 text-uppercase shadow-sm">${order.status}</span>
                 </div>
 
                 <div class="row g-4">
@@ -60,9 +77,14 @@
                             <div class="card-body">
                                 ${order.items.map(item => `
                                     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 last-no-border">
-                                        <div>
-                                            <h6 class="fw-bold mb-1">${item.product_name}</h6>
-                                            <small class="text-muted">Quantity: ${item.quantity} x ₦${parseFloat(item.price).toLocaleString()}</small>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                                <i class="fas fa-box text-secondary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold mb-1">${item.product_name}</h6>
+                                                <small class="text-muted">Quantity: ${item.quantity} x ₦${parseFloat(item.price).toLocaleString()}</small>
+                                            </div>
                                         </div>
                                         <div class="fw-bold">
                                             ₦${(item.price * item.quantity).toLocaleString()}
@@ -70,18 +92,20 @@
                                     </div>
                                 `).join('')}
                                 
-                                <div class="d-flex justify-content-between mt-3">
-                                    <span class="text-muted">Subtotal</span>
-                                    <span>₦${(parseFloat(order.total_amount) - parseFloat(order.delivery_fee || 0)).toLocaleString()}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <span class="text-muted">Delivery Fee</span>
-                                    <span>₦${parseFloat(order.delivery_fee || 0).toLocaleString()}</span>
-                                </div>
-                                <hr>
-                                <div class="d-flex justify-content-between fs-5 fw-bold">
-                                    <span>Total Amount</span>
-                                    <span class="text-primary">₦${parseFloat(order.total_amount).toLocaleString()}</span>
+                                <div class="mt-4 pt-2 bg-light rounded p-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Subtotal</span>
+                                        <span>₦${(parseFloat(order.total_amount) - parseFloat(order.delivery_fee || 0)).toLocaleString()}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Delivery Fee</span>
+                                        <span>₦${parseFloat(order.delivery_fee || 0).toLocaleString()}</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fs-5 fw-bold">
+                                        <span>Total Amount</span>
+                                        <span class="text-primary">₦${parseFloat(order.total_amount).toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -89,6 +113,22 @@
 
                     <div class="col-lg-4">
                         <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0">Payment Info</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    <strong>Method:</strong><br> 
+                                    ${order.payment_method === 'paystack' ? 'Paystack (Card/Transfer)' : 'Payment on Delivery'}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Status:</strong><br> 
+                                    ${paymentStatusHtml}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm border-0">
                             <div class="card-header bg-white py-3">
                                 <h5 class="mb-0">Shipping Details</h5>
                             </div>
@@ -99,31 +139,11 @@
                                 <p class="mb-0 text-muted"><i class="fas fa-phone-alt me-2"></i>${order.phone}</p>
                             </div>
                         </div>
-
-                        <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white py-3">
-                                <h5 class="mb-0">Payment Info</h5>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">
-                                    <strong>Method:</strong> 
-                                    ${order.payment_method === 'paystack' ? 'Paystack (Card/Transfer)' : 'Payment on Delivery'}
-                                </p>
-                                <p class="mb-2">
-                                    <strong>Status:</strong> 
-                                    ${order.is_paid 
-                                        ? '<span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>' 
-                                        : (order.payment_method === 'pod' && order.status !== 'delivered' 
-                                            ? '<span class="text-secondary"><i class="fas fa-hand-holding-usd"></i> Pay on Delivery</span>'
-                                            : '<span class="text-warning"><i class="fas fa-clock"></i> Pending Payment</span>')
-                                    }
-                                </p>
-                                <p class="mb-0 small text-muted">Date: ${new Date(order.created_at).toLocaleString()}</p>
-                            </div>
-                        </div>
                         
                         <div class="mt-4 text-center">
-                            <a href="/orders" class="btn btn-outline-secondary w-100">Back to My Orders</a>
+                            <a href="/orders" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>Back to My Orders
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -132,7 +152,7 @@
         } catch(e) {
             console.error(e);
             container.innerHTML = `
-                <div class="alert alert-danger text-center">
+                <div class="alert alert-danger text-center shadow-sm">
                     <h4>Failed to load order.</h4>
                     <p>Please check your connection or login again.</p>
                     <a href="/orders" class="btn btn-primary mt-2">Back to Orders</a>

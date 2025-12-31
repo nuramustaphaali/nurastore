@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Server Error | Django Store{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5 mt-5">
+    <h1 class="display-1 fw-bold text-danger">500</h1>
+    <h2 class="mb-3">Something went wrong.</h2>
+    <p class="lead text-muted mb-4">Our engineers have been notified. Please try again later.</p>
+    
+    <a href="/" class="btn btn-outline-secondary btn-lg px-4">
+        Try Refreshing
+    </a>
+</div>
+{% endblock %}

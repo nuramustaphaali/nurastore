@@ -13,4 +13,7 @@ urlpatterns = [
     path('orders/<int:id>/', lambda r, id: render(r, 'web/order_detail.html'), name='order_detail_ui'),
     path('product/<slug:slug>/', lambda r, slug: render(r, 'web/product_detail.html'), name='product_ui'),
     path('profile/', lambda r: render(r, 'web/profile.html'), name='profile_ui'),
+    path('about/', views.about_view, name='about'),
+    path('faq/', views.faq_view, name='faq'),
+    path('contact/', views.contact_view, name='contact'),
 ]

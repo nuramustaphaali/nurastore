@@ -8,6 +8,7 @@ from .views import (
     ProductListView, admin_dashboard_view, ProductDetailView, CategoryListView, 
     CreateReviewView, UserProfileDetailView # Ensure these are imported
 )
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     # Auth Endpoints
@@ -32,4 +33,13 @@ urlpatterns = [
     path('orders/<int:id>/', OrderDetailView.as_view(), name='order_detail'),
     path('dashboard-report/', admin_dashboard_view, name='admin_dashboard'),
     path('delivery-zones/', DeliveryZoneListView.as_view(), name='delivery_zones'),
+
+    # 1. The Schema File (JSON)
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+
+    # 2. Swagger UI (Interactive - Test your API here)
+    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    # 3. Redoc (Professional Reading View)
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

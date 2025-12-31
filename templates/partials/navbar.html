@@ -1,35 +1,61 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2">
     <div class="container">
-        <a class="navbar-brand" href="/">NuraStore</a>
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <a class="navbar-brand fw-bold fs-4 d-flex align-items-center me-auto" href="/">
+            <i class="fas fa-store text-primary me-2"></i>
+            <span>NuraStore</span>
+        </a>
+
+        <div class="d-flex align-items-center order-lg-last ms-3">
+            
+            <a class="nav-link position-relative text-light fs-5 me-3" href="#" data-bs-toggle="offcanvas" data-bs-target="#cartSidebar" onclick="App.fetchCart()" title="View Cart">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-dark" id="cart-count" style="font-size: 0.6rem;">
+                    0
+                </span>
+            </a>
+
+            <button class="navbar-toggler border-0 p-0 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
         
         <div class="collapse navbar-collapse" id="navbarNav">
-            <form class="d-flex mx-auto col-lg-6 my-2 my-lg-0">
-                <input class="form-control me-2" type="search" placeholder="Search products..." aria-label="Search">
-                <button class="btn btn-outline-light" type="submit">Search</button>
+            
+            <form class="d-flex mx-auto col-lg-6 my-3 my-lg-0" onsubmit="event.preventDefault(); App.filterState.search = this.querySelector('input').value; App.applyFilters();">
+                <div class="input-group">
+                    <input class="form-control border-0 rounded-start-pill ps-4 bg-light text-dark" type="search" placeholder="Search products..." aria-label="Search" id="navbar-search">
+                    <button class="btn btn-light border-0 rounded-end-pill pe-4 text-muted" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </form>
 
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link position-relative" href="#" data-bs-toggle="offcanvas" data-bs-target="#cartSidebar" onclick="App.fetchCart()">
-                        <i class="fas fa-shopping-cart"></i> Cart 
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">
-                            0
-                        </span>
+            <ul class="navbar-nav mb-2 mb-lg-0 align-items-lg-center">
+                
+                <li class="nav-item dropdown me-lg-3">
+                    <a class="nav-link dropdown-toggle text-secondary" href="#" role="button" data-bs-toggle="dropdown">
+                        Help
                     </a>
+                    <ul class="dropdown-menu border-0 shadow-sm animate slideIn">
+                        <li><a class="dropdown-item" href="/about">About Us</a></li>
+                        <li><a class="dropdown-item" href="/faq">FAQ</a></li>
+                        <li><a class="dropdown-item" href="/contact">Contact Support</a></li>
+                        <li><a class="dropdown-item" href="/api/docs">API Docs</a></li>
+                    </ul>
                 </li>
-               
-                <ul class="navbar-nav ms-auto" id="auth-links">
+
+                <li class="nav-item d-none d-lg-block">
+                    <div class="vr h-100 bg-secondary mx-2" style="opacity: 0.5; min-height: 24px;"></div>
+                </li>
+
+                <div id="auth-links" class="d-flex flex-column flex-lg-row align-items-lg-center gap-2 mt-2 mt-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="/login">Login</a>
+                         <a class="nav-link" href="/login">Login</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register">Register</a>
+                     <li class="nav-item">
+                         <a class="btn btn-primary rounded-pill btn-sm px-4 fw-bold" href="/register">Sign Up</a>
                     </li>
-                </ul>
+                </div>
             </ul>
         </div>
     </div>

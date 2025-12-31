@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 from core.email_service import EmailService 
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.db import transaction
 from .models import Order, OrderItem, Cart
 
@@ -103,6 +103,19 @@ class ProductListView(generics.ListAPIView):
     @method_decorator(cache_page(60 * 15)) 
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
+
+    @extend_schema(
+        summary="List & Filter Products",
+        description="Get a paginated list of products. Use query params to filter by category, search text, or sort by price.",
+        parameters=[
+            OpenApiParameter(name='search', description='Search term for product name', required=False, type=str),
+            OpenApiParameter(name='category', description='Category ID to filter by', required=False, type=int),
+            OpenApiParameter(name='ordering', description='Sort by: price, -price, created_at', required=False, type=str),
+        ],
+        tags=['Storefront'] # Groups this endpoint under a nice label
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 # class ProductDetailView(generics.RetrieveAPIView):
 #     """

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us | NuraStore{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-md-5">
+            <h2 class="fw-bold mb-4">Get in Touch</h2>
+            <p class="text-muted mb-4">Have questions about an order or want to partner with us? Reach out using the details below.</p>
+            
+            <div class="d-flex mb-4">
+                <div class="bg-light rounded-circle p-3 me-3 text-primary"><i class="fas fa-map-marker-alt fa-lg"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Our Office</h6>
+                    <p class="text-muted small">No. 5 Zoo Road, Kano State,<br>Nigeria</p>
+                </div>
+            </div>
+
+            <div class="d-flex mb-4">
+                <div class="bg-light rounded-circle p-3 me-3 text-primary"><i class="fas fa-phone-alt fa-lg"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Phone Support</h6>
+                    <p class="text-muted small">+234 800 123 4567<br>Mon - Sat (9am - 6pm)</p>
+                </div>
+            </div>
+
+            <div class="d-flex">
+                <div class="bg-light rounded-circle p-3 me-3 text-primary"><i class="fas fa-envelope fa-lg"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Email</h6>
+                    <p class="text-muted small">support@nurastore.com</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 p-4">
+                <h4 class="mb-4">Send us a message</h4>
+                <form>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Your Name</label>
+                            <input type="text" class="form-control" placeholder="John Doe">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" placeholder="john@example.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" placeholder="Order Inquiry...">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Message</label>
+                            <textarea class="form-control" rows="4" placeholder="How can we help?"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary px-4 py-2">Send Message</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

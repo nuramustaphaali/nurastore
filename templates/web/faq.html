@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}FAQ | NuraStore{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center fw-bold mb-5">Frequently Asked Questions</h1>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="accordion shadow-sm" id="faqAccordion">
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+                            How long does delivery take?
+                        </button>
+                    </h2>
+                    <div id="q1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">
+                            Delivery typically takes <strong>24 hours</strong> within Kano and <strong>2-3 business days</strong> for Abuja, Kaduna, and other states.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+                            Can I pay on delivery?
+                        </button>
+                    </h2>
+                    <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">
+                            Yes! We offer <strong>Payment on Delivery (POD)</strong> for select locations including Kano Metropolis. For other states, we require a secure online payment via Paystack.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+                            What is your return policy?
+                        </button>
+                    </h2>
+                    <div id="q3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">
+                            We accept returns within <strong>7 days</strong> of delivery if the item is defective or not as described. Please ensure the item is in its original packaging.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="text-center mt-5">
+                <p>Still have questions?</p>
+                <a href="/contact" class="btn btn-outline-primary">Contact Support</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

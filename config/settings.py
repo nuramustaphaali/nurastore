@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Third Party
     'rest_framework',
     'django_filters',
+    'drf_spectacular',
 
     # Local Apps
     'core',
@@ -121,7 +122,8 @@ REST_FRAMEWORK = {
         'anon': '100/day',   # Guests can only hit 100 times/day
         'user': '1000/day',  # Users get 1000
         'burst': '60/min',   # Custom scope for heavy actions
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 from datetime import timedelta
@@ -206,5 +208,25 @@ LOGGING = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "10.125.152.73:8000",
     # "https://yourdomain.com", # Add your domain later
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Nura Store API',
+    'DESCRIPTION': 'Official API documentation for the Nura Store. Access logistics, payments, and product data programmatically.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    
+    # Make it interactive (Authorize Button)
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY': [{'BearerAuth': []}], # Default security scheme
+    'SCHEMES': {
+        'BearerAuth': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'Enter your JWT access token here (e.g. "eyJ0eX...")',
+        }
+    },
+}
